@@ -1,9 +1,3 @@
-
-bash
-
-cat /home/claude/reven-backend/server.js
-Salida
-
 const express = require('express');
 const cors    = require('cors');
 const { AccessToken } = require('livekit-server-sdk');
