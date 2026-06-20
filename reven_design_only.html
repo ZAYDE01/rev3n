@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>REVEN</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;
+    --txt:#fff;--txt2:#aaa;--txt3:#666;
+    --acc:#fe2c55;--acc2:#25f4ee;--gold:#ffd700;
+    --border:rgba(255,255,255,0.1);
+    --nav-h:60px;--top-h:52px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  body{background:var(--bg);color:var(--txt);height:100dvh;overflow:hidden;position:relative}
+  
+  /* ── SCREENS ── */
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+  .screen.active{display:flex}
+  
+  /* ── TOP BAR ── */
+  .topbar{height:var(--top-h);display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:relative;z-index:10;flex-shrink:0}
+  .topbar-logo{font-size:22px;font-weight:900;letter-spacing:-1px;color:var(--txt)}
+  .topbar-logo span{color:var(--acc)}
+  .topbar-tabs{display:flex;gap:24px;position:absolute;left:50%;transform:translateX(-50%)}
+  .tab-btn{font-size:15px;font-weight:500;color:var(--txt2);background:none;border:none;cursor:pointer;padding:4px 0;border-bottom:2px solid transparent;transition:.2s}
+  .tab-btn.active{color:var(--txt);border-bottom-color:var(--txt);font-weight:700}
+  .topbar-icons{display:flex;gap:12px}
+  .icon-btn{width:36px;height:36px;border-radius:50%;background:none;border:none;color:var(--txt);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .icon-btn:active{transform:scale(.9);background:var(--bg3)}
+  
+  /* ── FEED ── */
+  .feed-container{flex:1;overflow:hidden;position:relative}
+  .video-stack{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+  .video-stack::-webkit-scrollbar{display:none}
+  .video-item{height:calc(100dvh - var(--top-h) - var(--nav-h));scroll-snap-align:start;position:relative;background:var(--bg2);overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .video-bg{position:absolute;inset:0;background:linear-gradient(135deg,#1a0010,#0a0a2e,#001a10);opacity:.9}
+  .video-gradient{position:absolute;bottom:0;left:0;right:0;height:65%;background:linear-gradient(transparent,rgba(0,0,0,.95))}
+  .play-indicator{position:relative;z-index:2;color:rgba(255,255,255,.15);font-size:80px;pointer-events:none}
+  .live-badge{position:absolute;top:12px;left:12px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;z-index:5}
+  
+  /* video info */
+  .video-info{position:absolute;bottom:80px;left:16px;right:70px;z-index:5}
+  .video-user{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .avatar-sm{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#7928ca);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;border:2px solid rgba(255,255,255,.3)}
+  .video-username{font-size:15px;font-weight:700}
+  .follow-pill{background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px;cursor:pointer;border:none;white-space:nowrap}
+  .follow-pill.following{background:transparent;border:1.5px solid rgba(255,255,255,.5);color:var(--txt2)}
+  .video-caption{font-size:14px;line-height:1.4;color:rgba(255,255,255,.9)}
+  .video-tags{font-size:14px;color:var(--acc2);margin-top:4px}
+  .music-row{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--txt2)}
+  
+  /* video actions */
+  .video-actions{position:absolute;right:12px;bottom:90px;display:flex;flex-direction:column;align-items:center;gap:20px;z-index:5}
+  .v-action{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+  .v-action-icon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:22px;transition:.15s;border:none;color:var(--txt)}
+  .v-action-icon:active{transform:scale(.85)}
+  .v-action-icon.liked{color:var(--acc)}
+  .v-action-label{font-size:12px;color:var(--txt);font-weight:500}
+  .disc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#7928ca);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:3px solid #fff;animation:spin 4s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  
+  /* ── SEARCH ── */
+  .search-overlay{position:absolute;inset:0;background:var(--bg);z-index:50;display:none;flex-direction:column}
+  .search-overlay.open{display:flex}
+  .search-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
+  .search-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);padding:10px 14px;font-size:15px;outline:none}
+  .search-input::placeholder{color:var(--txt3)}
+  .search-cancel{color:var(--txt2);font-size:15px;cursor:pointer;white-space:nowrap;background:none;border:none}
+  .search-content{flex:1;overflow-y:auto;padding:16px}
+  .search-section-title{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--txt)}
+  .explore-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:24px}
+  .explore-cell{aspect-ratio:1;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative;cursor:pointer}
+  .explore-cell-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .explore-label{position:absolute;bottom:6px;left:6px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+  .trending-list{display:flex;flex-direction:column;gap:0}
+  .trending-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+  .trend-rank{font-size:18px;font-weight:900;color:var(--txt3);width:24px;text-align:center}
+  .trend-rank.top{color:var(--acc)}
+  .trend-info{flex:1}
+  .trend-tag{font-size:14px;font-weight:700}
+  .trend-count{font-size:12px;color:var(--txt2);margin-top:2px}
+  
+  /* ── LIVE ── */
+  .live-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+  .live-card{background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:.15s}
+  .live-card:active{transform:scale(.98)}
+  .live-thumb{height:140px;position:relative;background:linear-gradient(135deg,#1a0a2e,#0a1a3e);display:flex;align-items:center;justify-content:center;font-size:48px}
+  .live-badge-sm{position:absolute;top:8px;left:8px;background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px}
+  .live-viewers{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;display:flex;align-items:center;gap:4px}
+  .live-meta{padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .live-meta-info{flex:1}
+  .live-meta-title{font-size:13px;font-weight:700}
+  .live-meta-user{font-size:12px;color:var(--txt2);margin-top:2px}
+  
+  /* ── FRIENDS ── */
+  .friends-content{flex:1;overflow-y:auto}
+  .section-header{padding:14px 16px 8px;font-size:14px;font-weight:700;color:var(--txt2);letter-spacing:.5px}
+  .friend-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:.1s}
+  .friend-item:active{background:var(--bg3)}
+  .avatar-md{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;position:relative}
+  .online-dot{position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#25f4ee;border-radius:50%;border:2px solid var(--bg)}
+  .friend-info{flex:1;min-width:0}
+  .friend-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .friend-sub{font-size:13px;color:var(--txt2);margin-top:2px}
+  .follow-btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .follow-btn.following{background:transparent;border:1.5px solid var(--border);color:var(--txt2)}
+  
+  /* ── MESSAGES ── */
+  .msg-list{flex:1;overflow-y:auto}
+  .msg-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border)}
+  .msg-item:active{background:var(--bg3)}
+  .msg-avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;position:relative}
+  .unread-dot{position:absolute;top:2px;right:2px;width:10px;height:10px;background:var(--acc);border-radius:50%;border:2px solid var(--bg)}
+  .msg-info{flex:1;min-width:0}
+  .msg-name{font-size:15px;font-weight:600}
+  .msg-preview{font-size:13px;color:var(--txt2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .msg-time{font-size:12px;color:var(--txt3);flex-shrink:0}
+  
+  /* ── CHAT ── */
+  .chat-screen{position:absolute;inset:0;background:var(--bg);z-index:60;display:none;flex-direction:column}
+  .chat-screen.open{display:flex}
+  .chat-topbar{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.4;word-break:break-word}
+  .bubble.them{background:var(--bg3);border-bottom-left-radius:4px;align-self:flex-start}
+  .bubble.me{background:var(--acc);border-bottom-right-radius:4px;align-self:flex-end}
+  .chat-input-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+  .chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:9px 16px;color:var(--txt);font-size:14px;outline:none}
+  .chat-send{width:38px;height:38px;border-radius:50%;background:var(--acc);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  
+  /* ── PROFILE ── */
+  .profile-scroll{flex:1;overflow-y:auto}
+  .profile-header{padding:20px 16px 16px}
+  .profile-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px}
+  .avatar-lg{width:82px;height:82px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;flex-shrink:0;border:2.5px solid var(--border);overflow:hidden;position:relative}
+  .avatar-lg img{width:100%;height:100%;object-fit:cover}
+  .profile-info{flex:1}
+  .profile-username{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .profile-handle{font-size:14px;color:var(--txt2);margin-top:2px}
+  .profile-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn-edit{background:var(--bg3);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn-follow-lg{background:var(--acc);border:none;color:#fff;border-radius:8px;padding:8px 24px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn-follow-lg.following{background:var(--bg3);border:1px solid var(--border);color:var(--txt)}
+  .btn-msg-lg{background:var(--bg3);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer}
+  .stats-row{display:flex;gap:0;margin-bottom:12px}
+  .stat-box{flex:1;text-align:center;padding:8px 0}
+  .stat-num{font-size:18px;font-weight:800}
+  .stat-label{font-size:12px;color:var(--txt2);margin-top:2px}
+  .profile-bio{font-size:14px;line-height:1.5;color:rgba(255,255,255,.85);margin-bottom:8px}
+  .profile-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag-pill{font-size:12px;color:var(--acc2);background:rgba(37,244,238,.1);padding:4px 10px;border-radius:20px}
+  .profile-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+  .profile-tab{flex:1;padding:12px 0;text-align:center;font-size:13px;font-weight:600;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+  .profile-tab.active{color:var(--txt);border-bottom-color:var(--txt)}
+  .videos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+  .vid-thumb{aspect-ratio:9/16;background:var(--bg3);overflow:hidden;position:relative;cursor:pointer}
+  .vid-thumb-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px}
+  .vid-views{position:absolute;bottom:6px;left:6px;font-size:11px;color:#fff;font-weight:600;display:flex;align-items:center;gap:3px}
+  .vid-live-badge{position:absolute;top:6px;left:6px;background:var(--acc);font-size:9px;font-weight:700;color:#fff;padding:2px 5px;border-radius:3px}
+  
+  /* ── CREATE ── */
+  .create-overlay{position:absolute;inset:0;background:rgba(0,0,0,.85);z-index:70;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(var(--nav-h) + 16px)}
+  .create-overlay.open{display:flex}
+  .create-menu{background:var(--bg2);border-radius:16px 16px 0 0;padding:20px 24px;width:100%;border-top:1px solid var(--border)}
+  .create-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:20px;color:var(--txt2)}
+  .create-options{display:flex;justify-content:space-around}
+  .create-option{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+  .create-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .create-label{font-size:13px;font-weight:600;color:var(--txt)}
+  
+  /* ── BOTTOM NAV ── */
+  .bottom-nav{height:var(--nav-h);background:rgba(0,0,0,.95);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;flex-shrink:0;position:relative;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 14px;transition:.15s;background:none;border:none;color:var(--txt2);flex:1}
+  .nav-item:active{transform:scale(.9)}
+  .nav-item.active{color:var(--txt)}
+  .nav-item i{font-size:24px}
+  .nav-label{font-size:10px;font-weight:600;letter-spacing:.2px}
+  .nav-plus{width:46px;height:32px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;position:relative;cursor:pointer;border:none;padding:0;flex-shrink:0}
+  .nav-plus::before{content:'';position:absolute;left:-6px;top:0;bottom:0;width:6px;background:linear-gradient(to right,rgba(37,244,238,.5),transparent)}
+  .nav-plus::after{content:'';position:absolute;right:-6px;top:0;bottom:0;width:6px;background:linear-gradient(to left,rgba(254,44,85,.5),transparent)}
+  
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:rgba(255,255,255,.12);backdrop-filter:blur(10px);color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;pointer-events:none;opacity:0;transition:.3s;z-index:200;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  
+  /* ── LIVE VIEW ── */
+  .live-view{position:absolute;inset:0;background:#000;z-index:80;display:none;flex-direction:column}
+  .live-view.open{display:flex}
+  .live-view-video{flex:1;position:relative;background:linear-gradient(135deg,#1a0028,#002010,#001a3e);display:flex;align-items:center;justify-content:center;font-size:80px}
+  .live-view-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px;background:linear-gradient(rgba(0,0,0,.7),transparent)}
+  .live-user-row{display:flex;align-items:center;gap:8px}
+  .live-username{font-size:14px;font-weight:700}
+  .live-viewers-count{font-size:13px;color:rgba(255,255,255,.7);margin-left:4px}
+  .live-close{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border:none;color:#fff}
+  .live-gifts-float{position:absolute;bottom:220px;left:16px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+  .gift-float{background:rgba(0,0,0,.5);border-radius:20px;padding:6px 12px;display:flex;align-items:center;gap:6px;font-size:13px;animation:floatUp 3s ease-out forwards}
+  @keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+  .live-chat-overlay{position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+  .live-chat-msgs{position:absolute;bottom:70px;left:0;right:80px;padding:0 12px;display:flex;flex-direction:column;gap:6px}
+  .live-chat-msg{font-size:13px;color:rgba(255,255,255,.9);line-height:1.3}
+  .live-chat-msg span{color:var(--acc2);font-weight:700}
+  .live-actions-bar{position:absolute;bottom:12px;left:0;right:0;display:flex;align-items:center;gap:8px;padding:0 12px}
+  .live-chat-input{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:22px;padding:9px 16px;color:#fff;font-size:14px;outline:none}
+  .live-action-btns{display:flex;gap:8px}
+  .live-btn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  
+  /* utils */
+  .flex-center{display:flex;align-items:center;justify-content:center}
+  .back-btn{background:none;border:none;color:var(--txt);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:36px;height:36px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://jqamsqlylsdjrzptnbqj.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_bFMrENBfJmuKq52JC9V4gQ_BavOdk8S";
+const BACKEND_URL="https://rev3n-production.up.railway.app";
+const PAYPAL_ME="https://www.paypal.me/TU_PAYPAL";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+</script>
+</head>
+<body>
+
+<!-- ════════ SCREEN: HOME ════════ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-logo">RE<span>VEN</span></div>
+    <div class="topbar-tabs">
+      <button class="tab-btn" onclick="switchFeedTab('live',this)">En vivo</button>
+      <button class="tab-btn active" onclick="switchFeedTab('feed',this)">Para ti</button>
+      <button class="tab-btn" onclick="switchFeedTab('following',this)">Siguiendo</button>
+    </div>
+    <div class="topbar-icons">
+      <button class="icon-btn" onclick="openSearch()" aria-label="Buscar"><i class="ti ti-search"></i></button>
+    </div>
+  </div>
+  <div class="feed-container">
+    <div class="video-stack" id="video-stack"></div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: FRIENDS ════════ -->
+<div class="screen" id="screen-friends">
+  <div class="topbar">
+    <div class="topbar-logo">RE<span>VEN</span></div>
+    <div style="font-size:17px;font-weight:700;position:absolute;left:50%;transform:translateX(-50%)">Amigos</div>
+    <button class="icon-btn" aria-label="Agregar"><i class="ti ti-user-plus"></i></button>
+  </div>
+  <div class="friends-content">
+    <div class="section-header">SUGERENCIAS PARA TI</div>
+    <div id="friends-list"></div>
+    <div class="section-header">CONTACTOS EN REVEN</div>
+    <div id="contacts-list"></div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: MESSAGES ════════ -->
+<div class="screen" id="screen-messages">
+  <div class="topbar">
+    <div class="topbar-logo">RE<span>VEN</span></div>
+    <div style="font-size:17px;font-weight:700;position:absolute;left:50%;transform:translateX(-50%)">Mensajes</div>
+    <button class="icon-btn" aria-label="Nuevo mensaje"><i class="ti ti-edit"></i></button>
+  </div>
+  <div class="msg-list" id="msg-list"></div>
+</div>
+
+<!-- ════════ SCREEN: PROFILE ════════ -->
+<div class="screen" id="screen-profile">
+  <div class="topbar">
+    <div class="topbar-logo">RE<span>VEN</span></div>
+    <div style="font-size:17px;font-weight:700;position:absolute;left:50%;transform:translateX(-50%)" id="profile-nav-title">Mi perfil</div>
+    <button class="icon-btn" aria-label="Opciones"><i class="ti ti-dots-vertical"></i></button>
+  </div>
+  <div class="profile-scroll">
+    <div class="profile-header">
+      <div class="profile-top">
+        <div class="avatar-lg" id="profile-avatar" style="background:linear-gradient(135deg,#fe2c55,#7928ca)">
+          <span id="profile-avatar-initials">TU</span>
+        </div>
+        <div class="profile-info">
+          <div class="profile-username" id="profile-name">Jugador REVEN</div>
+          <div class="profile-handle" id="profile-handle">@jugador</div>
+          <div class="profile-actions" id="profile-actions">
+            <button class="btn-edit" onclick="showToast('Editar perfil')">Editar perfil</button>
+            <button class="btn-edit" onclick="showToast('Compartir perfil')"><i class="ti ti-share" style="font-size:16px;vertical-align:-2px"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="stat-following">0</div><div class="stat-label">Siguiendo</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-followers">0</div><div class="stat-label">Seguidores</div></div>
+        <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">Likes</div></div>
+      </div>
+      <div class="profile-bio" id="profile-bio">Jugador en REVEN ⚡ Bienvenido a mi perfil.</div>
+      <div class="profile-tags"><span class="tag-pill">#REVEN</span><span class="tag-pill">#Retos</span><span class="tag-pill">#Live</span></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="switchProfileTab('videos',this)"><i class="ti ti-layout-grid" style="font-size:18px"></i></div>
+      <div class="profile-tab" onclick="switchProfileTab('liked',this)"><i class="ti ti-heart" style="font-size:18px"></i></div>
+      <div class="profile-tab" onclick="switchProfileTab('live',this)"><i class="ti ti-broadcast" style="font-size:18px"></i></div>
+    </div>
+    <div id="profile-grid" class="videos-grid"></div>
+  </div>
+</div>
+
+<!-- ════════ BOTTOM NAV ════════ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="goScreen('home')">
+    <i class="ti ti-home"></i><span class="nav-label">Inicio</span>
+  </button>
+  <button class="nav-item" id="nav-friends" onclick="goScreen('friends')">
+    <i class="ti ti-users"></i><span class="nav-label">Amigos</span>
+  </button>
+  <button class="nav-plus" onclick="openCreate()" aria-label="Crear">
+    <i class="ti ti-plus" style="font-size:22px;color:#fff"></i>
+  </button>
+  <button class="nav-item" id="nav-messages" onclick="goScreen('messages')">
+    <i class="ti ti-message-circle"></i><span class="nav-label">Mensajes</span>
+  </button>
+  <button class="nav-item" id="nav-profile" onclick="goScreen('profile')">
+    <i class="ti ti-user-circle"></i><span class="nav-label">Perfil</span>
+  </button>
+</nav>
+
+<!-- ════════ SEARCH OVERLAY ════════ -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-bar">
+    <input class="search-input" id="search-input" placeholder="Buscar usuarios, retos, #tags..." oninput="doSearch(this.value)">
+    <button class="search-cancel" onclick="closeSearch()">Cancelar</button>
+  </div>
+  <div class="search-content" id="search-content"></div>
+</div>
+
+<!-- ════════ CREATE OVERLAY ════════ -->
+<div class="create-overlay" id="create-overlay" onclick="closeCreate(event)">
+  <div class="create-menu" onclick="event.stopPropagation()">
+    <div class="create-title">Crear en REVEN</div>
+    <div class="create-options">
+      <div class="create-option" onclick="showToast('Grabando video...');closeCreate()">
+        <div class="create-icon" style="background:linear-gradient(135deg,#fe2c55,#7928ca)"><i class="ti ti-video" style="color:#fff;font-size:28px"></i></div>
+        <span class="create-label">Video</span>
+      </div>
+      <div class="create-option" onclick="showToast('Iniciando transmisión...');closeCreate()">
+        <div class="create-icon" style="background:linear-gradient(135deg,#ff6b35,#fe2c55)"><i class="ti ti-broadcast" style="color:#fff;font-size:28px"></i></div>
+        <span class="create-label">En vivo</span>
+      </div>
+      <div class="create-option" onclick="showToast('Nuevo reto...');closeCreate()">
+        <div class="create-icon" style="background:linear-gradient(135deg,#25f4ee,#0ea5e9)"><i class="ti ti-bolt" style="color:#fff;font-size:28px"></i></div>
+        <span class="create-label">Reto</span>
+      </div>
+      <div class="create-option" onclick="showToast('Subir video...');closeCreate()">
+        <div class="create-icon" style="background:linear-gradient(135deg,#ffd700,#ff9500)"><i class="ti ti-upload" style="color:#fff;font-size:28px"></i></div>
+        <span class="create-label">Subir</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ CHAT SCREEN ════════ -->
+<div class="chat-screen" id="chat-screen">
+  <div class="chat-topbar">
+    <button class="back-btn" onclick="closeChat()"><i class="ti ti-arrow-left"></i></button>
+    <div class="avatar-md" id="chat-avatar" style="background:linear-gradient(135deg,#fe2c55,#7928ca);width:36px;height:36px;font-size:14px">AV</div>
+    <div style="flex:1;margin-left:6px">
+      <div style="font-size:15px;font-weight:700" id="chat-name">Usuario</div>
+      <div style="font-size:12px;color:var(--txt2)">Activo ahora</div>
+    </div>
+    <button class="icon-btn"><i class="ti ti-dots"></i></button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <button class="icon-btn" style="color:var(--acc2)"><i class="ti ti-photo"></i></button>
+    <input class="chat-input" id="chat-input" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()">
+    <button class="chat-send" onclick="sendChatMsg()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
+
+<!-- ════════ LIVE VIEW ════════ -->
+<div class="live-view" id="live-view">
+  <div class="live-view-video">
+    🎮
+    <div class="live-view-top">
+      <div class="live-user-row">
+        <div class="avatar-sm" id="live-view-avatar" style="background:linear-gradient(135deg,#fe2c55,#7928ca)">RV</div>
+        <span class="live-badge" style="position:relative;top:0;left:0">LIVE</span>
+        <span class="live-username" id="live-view-name">Jugador</span>
+        <span class="live-viewers-count" id="live-view-count">0 viendo</span>
+      </div>
+      <button class="live-close" onclick="closeLive()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="live-gifts-float" id="live-gifts-float"></div>
+    <div class="live-chat-overlay"></div>
+    <div class="live-chat-msgs" id="live-chat-msgs"></div>
+    <div class="live-actions-bar">
+      <input class="live-chat-input" placeholder="Comentar en el live..." onkeydown="if(event.key==='Enter')sendLiveMsg(this)">
+      <div class="live-action-btns">
+        <button class="live-btn" onclick="sendGift()"><i class="ti ti-gift" style="color:#ffd700"></i></button>
+        <button class="live-btn" onclick="toggleLikeVideo(this,'live')"><i class="ti ti-heart" style="color:var(--acc)"></i></button>
+        <button class="live-btn" onclick="showToast('Compartido!')"><i class="ti ti-share"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ USER PROFILE VIEW ════════ -->
+<div class="screen" id="screen-other-profile" style="z-index:55">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+    <div style="font-size:16px;font-weight:700;position:absolute;left:50%;transform:translateX(-50%)" id="other-profile-handle">@usuario</div>
+    <button class="icon-btn"><i class="ti ti-dots-vertical"></i></button>
+  </div>
+  <div class="profile-scroll">
+    <div class="profile-header">
+      <div class="profile-top">
+        <div class="avatar-lg" id="other-avatar" style="background:linear-gradient(135deg,#25f4ee,#0ea5e9)">
+          <span id="other-avatar-initials">US</span>
+        </div>
+        <div class="profile-info">
+          <div class="profile-username" id="other-name">Nombre</div>
+          <div class="profile-handle" id="other-handle">@usuario</div>
+          <div class="profile-actions">
+            <button class="btn-follow-lg" id="other-follow-btn" onclick="toggleFollowOther(this)">Seguir</button>
+            <button class="btn-msg-lg" onclick="openChatFromProfile()"><i class="ti ti-message-circle" style="font-size:16px;vertical-align:-2px"></i></button>
+            <button class="btn-msg-lg" onclick="showToast('Notificaciones activadas')"><i class="ti ti-bell" style="font-size:16px;vertical-align:-2px"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="other-following">142</div><div class="stat-label">Siguiendo</div></div>
+        <div class="stat-box"><div class="stat-num" id="other-followers">8.4K</div><div class="stat-label">Seguidores</div></div>
+        <div class="stat-box"><div class="stat-num">24.1K</div><div class="stat-label">Likes</div></div>
+      </div>
+      <div class="profile-bio" id="other-bio">Jugador profesional REVEN ⚡🔥</div>
+      <div class="profile-tags"><span class="tag-pill">#REVEN</span><span class="tag-pill">#Retos</span></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="switchProfileTab('videos',this)"><i class="ti ti-layout-grid" style="font-size:18px"></i></div>
+      <div class="profile-tab" onclick="switchProfileTab('liked',this)"><i class="ti ti-heart" style="font-size:18px"></i></div>
+      <div class="profile-tab" onclick="switchProfileTab('live',this)"><i class="ti ti-broadcast" style="font-size:18px"></i></div>
+    </div>
+    <div class="videos-grid" id="other-grid"></div>
+  </div>
+</div>
+
+<!-- ════════ TOAST ════════ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// REVEN — Backend Real (Supabase + LiveKit)
+// ═══════════════════════════════════════════
+const S={
+  user:null,profile:null,role:null,
+  followingIds:new Set(),
+  obsBalance:0,playerGross:0,isLive:false,
+  livekitRoom:null,observerRoom:null,
+  activePlayer:null,camFacing:'user',
+  localStream:null,chatChannel:null,dmChannel:null,
+  activeDmUser:null,currentChatUser:null,
+  prevScreen:'home',currentScreen:'home',
+  feedTab:'feed'
+};
+
+const GIFTS=[
+  {id:'hojita',name:'Hojita',coins:1,r:'common',c:'#4CAF50',e:'🌿'},
+  {id:'destello',name:'Destello',coins:1,r:'common',c:'#FFF176',e:'✨'},
+  {id:'cristal',name:'Cristal',coins:5,r:'common',c:'#80D8FF',e:'💎'},
+  {id:'fulgor',name:'Fulgor',coins:10,r:'rare',c:'#448AFF',e:'⚡'},
+  {id:'orquidea',name:'Orquídea',coins:20,r:'rare',c:'#E040FB',e:'🌸'},
+  {id:'cometa',name:'Cometa',coins:50,r:'rare',c:'#42A5F5',e:'☄️'},
+  {id:'saxofon',name:'Saxofón',coins:100,r:'epic',c:'#AB47BC',e:'🎷'},
+  {id:'ola',name:'Ola',coins:499,r:'epic',c:'#26A69A',e:'🌊'},
+  {id:'nebulosa',name:'Nebulosa',coins:1000,r:'legendary',c:'#7E57C2',e:'🌌'},
+  {id:'tigreZen',name:'Tigre Zen',coins:1999,r:'legendary',c:'#FFA726',e:'🐯'},
+  {id:'pegasus',name:'Pegasus',coins:5000,r:'mythic',c:'#EF5350',e:'🦄'},
+  {id:'trono',name:'Trono Solar',coins:10000,r:'mythic',c:'#FFD700',e:'👑'},
+  {id:'supernova',name:'Supernova',coins:25999,r:'supreme',c:'#FF007F',e:'💥'},
+  {id:'omniverso',name:'Omniverso',coins:44999,r:'supreme',c:'#00F5FF',e:'🌀'},
+];
+
+// ── INIT ─────────────────────────────────
+window.addEventListener('DOMContentLoaded',async()=>{
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){location.href='/index.html';return;}
+    S.user=session.user;
+    const {data:p}=await sb.from('profiles').select('*').eq('id',S.user.id).single();
+    if(!p){location.href='/index.html';return;}
+    if(p.role==='player'&&p.social_status!=='approved'){location.href='/index.html';return;}
+    S.profile=p;S.role=p.role;
+    S.playerGross=p.earnings_gross||0;
+    S.obsBalance=p.balance_coins||0;
+    await loadFollowing();
+    buildApp();
+  }catch(e){console.error(e);location.href='/index.html';}
+});
+
+async function loadFollowing(){
+  try{
+    const {data}=await sb.from('follows').select('player_id').eq('observer_id',S.user.id);
+    S.followingIds=new Set((data||[]).map(r=>r.player_id));
+  }catch{S.followingIds=new Set();}
+}
+
+function buildApp(){
+  // Update profile nav
+  setProfileDisplay();
+  buildFeed();
+  buildFriends();
+  buildMessages();
+  buildProfileGrid();
+}
+
+function setProfileDisplay(){
+  const av=S.profile.avatar_url;
+  const username=S.profile.username||'Usuario';
+  document.getElementById('profile-name').textContent=username;
+  document.getElementById('profile-handle').textContent='@'+username;
+  document.getElementById('profile-nav-title').textContent='@'+username;
+  document.getElementById('stat-followers').textContent='...';
+  document.getElementById('stat-following').textContent=S.followingIds.size;
+  if(av){
+    const avEl=document.getElementById('profile-avatar');
+    avEl.innerHTML=`<img src="${av}" style="width:100%;height:100%;object-fit:cover;">`;
+  }else{
+    document.getElementById('profile-avatar-initials').textContent=username.substring(0,2).toUpperCase();
+  }
+  // Load follower count
+  sb.from('follows').select('*',{count:'exact',head:true}).eq('player_id',S.user.id)
+    .then(({count})=>{ document.getElementById('stat-followers').textContent=count||0; });
+  // Edit profile btn wires
+  document.getElementById('profile-actions').innerHTML=`
+    <button class="btn-edit" onclick="triggerAvatarUpload()">Editar foto</button>
+    <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+    <button class="btn-edit" onclick="showToast('Próximamente')">&#8942;</button>
+    ${S.role==='player'?`<button class="btn-edit" style="background:var(--acc);border:none;color:#fff;" onclick="openStudio()">📡 Live</button>`:''}`;
+}
+
+// ── FEED ─────────────────────────────────
+async function buildFeed(){
+  const stack=document.getElementById('video-stack');
+  stack.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#555;font-size:14px;">Cargando...</div>';
+  try{
+    let items=[];
+    // Lives activos primero
+    const {data:lives}=await sb.from('profiles').select('*').eq('role','player').eq('is_live',true).eq('social_status','approved');
+    (lives||[]).forEach(p=>items.push({type:'live',profile:p}));
+    // Videos
+    let vq=sb.from('player_videos').select('*,profiles(id,username,avatar_url,social_status)').order('created_at',{ascending:false}).limit(20);
+    if(S.feedTab==='following'&&S.followingIds.size>0)vq=vq.in('player_id',[...S.followingIds]);
+    const {data:videos}=await vq;
+    (videos||[]).filter(v=>v.profiles?.social_status==='approved').forEach(v=>items.push({type:'video',video:v,profile:v.profiles}));
+    if(!items.length){
+      stack.innerHTML='<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555;gap:12px;"><div style="font-size:40px;">🎮</div><div style="font-size:16px;font-weight:700;color:#333;">Sin contenido</div><div style="font-size:13px;">Sigue a jugadores para ver su contenido aquí.</div></div>';
+      return;
+    }
+    stack.innerHTML='';
+    items.forEach((item,i)=>{
+      const el=document.createElement('div');
+      el.className='video-item';
+      const p=item.profile||{};
+      const isF=S.followingIds.has(p.id);
+      const isMe=p.id===S.user.id;
+      const avHTML=p.avatar_url
+        ?`<img src="${p.avatar_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3);" onerror="this.outerHTML='<div class=\\'avatar-sm\\' style=\\'background:linear-gradient(135deg,#fe2c55,#7928ca);\\'>${(p.username||'?').substring(0,2).toUpperCase()}</div>'">`
+        :`<div class="avatar-sm" style="background:linear-gradient(135deg,#fe2c55,#7928ca);">${(p.username||'?').substring(0,2).toUpperCase()}</div>`;
+      if(item.type==='live'){
+        const bgEl=p.avatar_url
+          ?`<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;filter:blur(8px) brightness(.4);">`
+          :`<div class="video-bg" style="background:linear-gradient(135deg,#1a0028,#002010);"></div>`;
+        el.innerHTML=`
+          ${bgEl}
+          <div class="video-gradient"></div>
+          <div class="live-badge">🔴 EN VIVO</div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="openLive('${p.id}','${p.username}','${p.avatar_url||''}')">
+            <div style="text-align:center;">
+              ${p.avatar_url?`<img src="${p.avatar_url}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--acc);box-shadow:0 0 30px rgba(254,44,85,.6);margin-bottom:12px;">`:`<div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#7928ca);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;">${(p.username||'?').substring(0,2).toUpperCase()}</div>`}
+              <div style="font-size:15px;font-weight:800;">@${p.username}</div>
+              <div style="margin-top:8px;background:var(--acc);padding:6px 18px;border-radius:6px;font-size:13px;font-weight:700;display:inline-block;">UNIRSE AL LIVE</div>
+            </div>
+          </div>
+          <div class="video-info">
+            <div class="video-user">${avHTML}<span class="video-username" onclick="openOtherProfile('${p.id}')">${p.username}</span>
+            ${!isMe?`<button class="follow-pill ${isF?'following':''}" id="ffb-${p.id}" onclick="toggleFollow('${p.id}',this)">${isF?'Siguiendo':'+ Seguir'}</button>`:''}
+            </div>
+            <div class="video-tags" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span class="live-badge" style="position:relative;top:0;left:0;font-size:11px;">🔴 LIVE</span><span style="font-size:13px;color:rgba(255,255,255,.7);">Transmisión en vivo</span></div>
+          </div>
+          <div class="video-actions">
+            <div class="v-action" onclick="openOtherProfile('${p.id}')">
+              <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #fff;">${p.avatar_url?`<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`:`<div style="width:100%;height:100%;background:linear-gradient(135deg,#fe2c55,#7928ca);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;">${(p.username||'?').substring(0,2).toUpperCase()}</div>`}</div>
+            </div>
+            <div class="v-action" onclick="openLive('${p.id}','${p.username}','${p.avatar_url||''}')">
+              <button class="v-action-icon" style="color:var(--acc)"><i class="ti ti-broadcast"></i></button>
+              <span class="v-action-label">Unirse</span>
+            </div>
+            <div class="v-action" onclick="copyShare('${p.username}')">
+              <button class="v-action-icon"><i class="ti ti-share-2"></i></button>
+              <span class="v-action-label">Compartir</span>
+            </div>
+          </div>`;
+      }else{
+        const v=item.video;
+        el.innerHTML=`
+          <video class="video-bg" src="${v.video_url}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" loop muted playsinline preload="none" id="fv-${i}"></video>
+          <div class="video-gradient"></div>
+          <div class="video-info">
+            <div class="video-user">${avHTML}
+              <span class="video-username" onclick="openOtherProfile('${p.id}')" style="cursor:pointer;">${p.username}</span>
+              ${!isMe?`<button class="follow-pill ${isF?'following':''}" id="ffb-${p.id}" onclick="toggleFollow('${p.id}',this)">${isF?'Siguiendo':'+ Seguir'}</button>`:''}
+            </div>
+            <div class="video-caption">${v.description||''}</div>
+            <div class="music-row"><i class="ti ti-music" style="font-size:14px"></i> REVEN Original</div>
+          </div>
+          <div class="video-actions">
+            <div class="v-action" onclick="openOtherProfile('${p.id}')">
+              <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #fff;background:linear-gradient(135deg,#fe2c55,#7928ca);">${p.avatar_url?`<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">${(p.username||'?').substring(0,2).toUpperCase()}</div>`}</div>
+            </div>
+            <div class="v-action" onclick="likeVideo('${v.id}',this)">
+              <button class="v-action-icon" id="lbtn-${v.id}"><i class="ti ti-heart"></i></button>
+              <span class="v-action-label" id="lcount-${v.id}">${v.likes||0}</span>
+            </div>
+            <div class="v-action">
+              <button class="v-action-icon"><i class="ti ti-message-circle"></i></button>
+              <span class="v-action-label">Chat</span>
+            </div>
+            <div class="v-action" onclick="copyShare('${p.username}')">
+              <button class="v-action-icon"><i class="ti ti-share-2"></i></button>
+              <span class="v-action-label">Compartir</span>
+            </div>
+            <div class="v-action">
+              <div class="disc-avatar" style="background:linear-gradient(135deg,#fe2c55,#7928ca);">${(p.username||'?').substring(0,2).toUpperCase()}</div>
+            </div>
+          </div>`;
+      }
+      stack.appendChild(el);
+    });
+    // Intersection Observer for video autoplay
+    const io=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        const vid=e.target.querySelector('video[id^="fv-"]');
+        if(!vid)return;
+        e.isIntersecting?vid.play().catch(()=>{}):vid.pause();
+      });
+    },{threshold:.6});
+    stack.querySelectorAll('.video-item').forEach(el=>io.observe(el));
+  }catch(err){
+    stack.innerHTML=`<div style="padding:20px;color:#555;">${err.message}</div>`;
+  }
+}
+
+function copyShare(username){
+  navigator.clipboard?.writeText(`https://reven.app/@${username}`).catch(()=>{});
+  showToast('Enlace copiado!');
+}
+
+// ── FOLLOW ────────────────────────────────
+async function toggleFollow(targetId,btn){
+  if(!targetId||targetId===S.user.id)return;
+  const isF=S.followingIds.has(targetId);
+  try{
+    if(isF){
+      await sb.from('follows').delete().eq('observer_id',S.user.id).eq('player_id',targetId);
+      S.followingIds.delete(targetId);
+      document.querySelectorAll(`[id="ffb-${targetId}"]`).forEach(b=>{b.textContent='+ Seguir';b.className=b.className.replace(/\bfollowing\b/,'').trim();});
+    }else{
+      await sb.from('follows').insert({observer_id:S.user.id,player_id:targetId});
+      S.followingIds.add(targetId);
+      document.querySelectorAll(`[id="ffb-${targetId}"]`).forEach(b=>{b.textContent='Siguiendo';if(!b.className.includes('following'))b.className+=' following';});
+    }
+    document.getElementById('stat-following').textContent=S.followingIds.size;
+    showToast(isF?'Dejaste de seguir':'¡Siguiendo!');
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+// ── FRIENDS ───────────────────────────────
+async function buildFriends(){
+  const fl=document.getElementById('friends-list');
+  const cl=document.getElementById('contacts-list');
+  fl.innerHTML='<div style="padding:16px;color:#555;font-size:13px;">Cargando...</div>';
+  cl.innerHTML='';
+  try{
+    // Siguiendo
+    const {data:following}=await sb.from('follows').select('profiles!follows_player_id_fkey(id,username,avatar_url,role,is_live)').eq('observer_id',S.user.id);
+    const fUsers=(following||[]).map(r=>r.profiles).filter(Boolean);
+    // Sugeridos
+    const {data:suggested}=await sb.from('profiles').select('id,username,avatar_url,role,is_live').neq('id',S.user.id).eq('social_status','approved').limit(10);
+    const sugUsers=(suggested||[]).filter(u=>!S.followingIds.has(u.id)).slice(0,5);
+    fl.innerHTML=fUsers.length?fUsers.map(u=>friendItemHTML(u)).join(''):'<div style="padding:16px;color:#555;font-size:13px;">Aún no sigues a nadie.</div>';
+    cl.innerHTML=sugUsers.map(u=>friendItemHTML(u)).join('');
+  }catch(e){fl.innerHTML=`<div style="padding:16px;color:#666;">${e.message}</div>`;}
+}
+
+function friendItemHTML(u){
+  const isF=S.followingIds.has(u.id);
+  const avHTML=u.avatar_url
+    ?`<img src="${u.avatar_url}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;">`
+    :`<div style="background:linear-gradient(135deg,#fe2c55,#7928ca);">${(u.username||'?').substring(0,2).toUpperCase()}</div>`;
+  return `<div class="friend-item">
+    <div class="avatar-md" style="overflow:hidden;" onclick="openOtherProfile('${u.id}')">${avHTML}${u.is_live?`<div style="position:absolute;bottom:2px;right:2px;width:10px;height:10px;background:var(--acc);border-radius:50%;border:2px solid var(--bg);"></div>`:''}</div>
+    <div class="friend-info" onclick="openOtherProfile('${u.id}')">
+      <div class="friend-name">@${u.username}</div>
+      <div class="friend-sub">${u.role==='player'?'Jugador':'Observador'}${u.is_live?' · 🔴 En vivo':''}</div>
+    </div>
+    <button class="follow-btn ${isF?'following':''}" id="ffb-${u.id}" onclick="toggleFollow('${u.id}',this)">${isF?'Siguiendo':'Seguir'}</button>
+  </div>`;
+}
+
+// ── MESSAGES ─────────────────────────────
+async function buildMessages(){
+  const list=document.getElementById('msg-list');
+  list.innerHTML='<div style="padding:20px 16px;color:#555;font-size:13px;">Cargando...</div>';
+  try{
+    const {data:sent}=await sb.from('direct_messages').select('to_id,profiles!direct_messages_to_id_fkey(id,username,avatar_url),body,created_at').eq('from_id',S.user.id).order('created_at',{ascending:false});
+    const {data:recv}=await sb.from('direct_messages').select('from_id,profiles!direct_messages_from_id_fkey(id,username,avatar_url),body,created_at').eq('to_id',S.user.id).order('created_at',{ascending:false});
+    const seen=new Set();const threads=[];
+    [...(sent||[]).map(r=>({...r.profiles,preview:r.body,time:r.created_at})),...(recv||[]).map(r=>({...r.profiles,preview:r.body,time:r.created_at}))]
+      .filter(Boolean).forEach(u=>{if(!seen.has(u.id)){seen.add(u.id);threads.push(u);}});
+    if(!threads.length){list.innerHTML='<div style="padding:40px 16px;text-align:center;color:#444;">Sin mensajes aún.<br>Busca a alguien para escribirle.</div>';return;}
+    list.innerHTML=threads.map(u=>{
+      const avHTML=u.avatar_url?`<img src="${u.avatar_url}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;">`:`<span>${(u.username||'?').substring(0,2).toUpperCase()}</span>`;
+      return `<div class="msg-item" onclick="openChat('${u.id}','${u.username}','${u.avatar_url||''}')">
+        <div class="msg-avatar" style="background:linear-gradient(135deg,#fe2c55,#7928ca);overflow:hidden;">${avHTML}</div>
+        <div class="msg-info"><div class="msg-name">@${u.username}</div><div class="msg-preview">${u.preview||''}</div></div>
+        <div class="msg-time">${timeAgo(u.time)}</div>
+      </div>`;
+    }).join('');
+  }catch(e){list.innerHTML=`<div style="padding:16px;color:#666;">${e.message}</div>`;}
+}
+
+function timeAgo(ts){
+  if(!ts)return'';
+  const d=Math.floor((Date.now()-new Date(ts))/1000);
+  if(d<60)return'ahora';if(d<3600)return Math.floor(d/60)+'m';if(d<86400)return Math.floor(d/3600)+'h';return Math.floor(d/86400)+'d';
+}
+
+// ── CHAT DM ───────────────────────────────
+async function openChat(userId,username,avatarUrl){
+  S.activeDmUser={id:userId,username,avatarUrl};
+  S.currentChatUser={id:userId,username,avatar_url:avatarUrl};
+  // Update chat UI
+  const avEl=document.getElementById('chat-avatar');
+  avEl.style.background='';
+  if(avatarUrl){avEl.innerHTML=`<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;avEl.style.overflow='hidden';}
+  else{avEl.textContent=(username||'?').substring(0,2).toUpperCase();avEl.style.background='linear-gradient(135deg,#fe2c55,#7928ca)';}
+  document.getElementById('chat-name').textContent='@'+username;
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML='';
+  document.getElementById('chat-screen').classList.add('open');
+  // Load history
+  try{
+    const {data}=await sb.from('direct_messages')
+      .select('*').or(`and(from_id.eq.${S.user.id},to_id.eq.${userId}),and(from_id.eq.${userId},to_id.eq.${S.user.id})`)
+      .order('created_at',{ascending:true}).limit(50);
+    (data||[]).forEach(m=>appendBubble(m.body,m.from_id===S.user.id));
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch{}
+  // Realtime
+  if(S.dmChannel)S.dmChannel.unsubscribe();
+  const room=[S.user.id,userId].sort().join('-');
+  S.dmChannel=sb.channel(`dm:${room}`,{config:{broadcast:{self:false}}});
+  S.dmChannel.on('broadcast',{event:'dm'},p=>{appendBubble(p.payload.body,false);}).subscribe();
+}
+function openChatFromProfile(){if(S.currentChatUser)openChat(S.currentChatUser.id,S.currentChatUser.username,S.currentChatUser.avatar_url||'');}
+function closeChat(){document.getElementById('chat-screen').classList.remove('open');if(S.dmChannel){S.dmChannel.unsubscribe();S.dmChannel=null;}}
+function appendBubble(txt,me){
+  const msgs=document.getElementById('chat-messages');
+  const el=document.createElement('div');el.className=`bubble ${me?'me':'them'}`;el.textContent=txt;
+  msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+}
+async function sendChatMsg(){
+  const inp=document.getElementById('chat-input');const body=inp.value.trim();
+  if(!body||!S.activeDmUser)return;
+  inp.value='';appendBubble(body,true);
+  await sb.from('direct_messages').insert({from_id:S.user.id,to_id:S.activeDmUser.id,body});
+  S.dmChannel&&S.dmChannel.send({type:'broadcast',event:'dm',payload:{body}});
+}
+
+// ── PROFILE ───────────────────────────────
+async function buildProfileGrid(){
+  const grid=document.getElementById('profile-grid');grid.innerHTML='';
+  try{
+    const {data:videos}=await sb.from('player_videos').select('*').eq('player_id',S.user.id).order('created_at',{ascending:false});
+    // Upload button
+    const upl=document.createElement('div');upl.className='vid-thumb';
+    upl.innerHTML=`<div class="vid-thumb-bg" style="background:var(--bg3);border:2px dashed #333;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><i class="ti ti-plus" style="font-size:28px;color:#444;"></i><span style="font-size:10px;color:#444;">Subir</span></div><input type="file" id="vidUpload" accept="video/*" style="display:none;" onchange="uploadVideo(event)">`;
+    upl.onclick=()=>document.getElementById('vidUpload').click();
+    grid.appendChild(upl);
+    (videos||[]).forEach(v=>{
+      const d=document.createElement('div');d.className='vid-thumb';
+      d.innerHTML=`<video src="${v.video_url}" preload="metadata" muted style="width:100%;height:100%;object-fit:cover;"></video><div class="vid-views"><i class="ti ti-player-play" style="font-size:10px"></i>${v.likes||0}</div>`;
+      d.onclick=()=>playVideoModal(v.video_url);
+      grid.appendChild(d);
+    });
+  }catch{}
+}
+
+async function uploadAvatar(e){
+  const file=e.target.files[0];if(!file)return;
+  showToast('Subiendo...');
+  try{
+    const ext=file.name.split('.').pop().toLowerCase();
+    const path=`avatars/${S.user.id}.${ext}`;
+    const {error}=await sb.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type});
+    if(error)throw error;
+    const {data:{publicUrl}}=sb.storage.from('avatars').getPublicUrl(path);
+    const url=publicUrl+'?t='+Date.now();
+    await sb.from('profiles').update({avatar_url:url}).eq('id',S.user.id);
+    S.profile.avatar_url=url;
+    const avEl=document.getElementById('profile-avatar');
+    avEl.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
+    showToast('✓ Foto actualizada');
+  }catch(err){showToast('Error: '+err.message);}
+  e.target.value='';
+}
+function triggerAvatarUpload(){document.getElementById('avatarFileInput')&&document.getElementById('avatarFileInput').click();}
+
+async function uploadVideo(e){
+  const file=e.target.files[0];if(!file)return;
+  const dur=await new Promise(res=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{URL.revokeObjectURL(v.src);res(v.duration);};v.onerror=()=>res(null);v.src=URL.createObjectURL(file);});
+  if(dur!==null&&dur>600){showToast('Máximo 10 minutos');e.target.value='';return;}
+  showToast('Subiendo video...');
+  try{
+    const ext=file.name.split('.').pop().toLowerCase();
+    const path=`videos/${S.user.id}/${Date.now()}.${ext}`;
+    const {error}=await sb.storage.from('videos').upload(path,file,{contentType:file.type});
+    if(error)throw error;
+    const {data:{publicUrl}}=sb.storage.from('videos').getPublicUrl(path);
+    await sb.from('player_videos').insert({player_id:S.user.id,video_url:publicUrl});
+    showToast('✓ Video publicado');
+    buildProfileGrid();
+  }catch(err){showToast('Error: '+err.message);}
+  e.target.value='';
+}
+
+function playVideoModal(url){
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;';
+  m.innerHTML=`<div style="position:relative;width:min(100%,380px);"><button onclick="this.closest('div').parentElement.remove()" style="position:absolute;top:-40px;right:0;background:none;border:none;color:#fff;font-size:26px;cursor:pointer;">✕</button><video src="${url}" controls autoplay playsinline style="width:100%;border-radius:12px;max-height:85vh;"></video></div>`;
+  m.addEventListener('click',ev=>{if(ev.target===m)m.remove();});
+  document.body.appendChild(m);
+}
+
+function likeVideo(id,el){
+  const btn=document.getElementById('lbtn-'+id);
+  const cnt=document.getElementById('lcount-'+id);
+  if(btn.classList.contains('liked')){btn.classList.remove('liked');if(cnt)cnt.textContent=Math.max(0,(parseInt(cnt.textContent)||1)-1);}
+  else{btn.classList.add('liked');if(cnt)cnt.textContent=(parseInt(cnt.textContent)||0)+1;showToast('❤️');}
+}
+
+// ── OTHER PROFILE ─────────────────────────
+async function openOtherProfile(uid){
+  if(uid===S.user.id){goScreen('profile');return;}
+  try{
+    const {data:u}=await sb.from('profiles').select('*').eq('id',uid).single();
+    if(!u)return;
+    S.currentChatUser={id:u.id,username:u.username,avatar_url:u.avatar_url};
+    const isF=S.followingIds.has(uid);
+    const avEl=document.getElementById('other-avatar');
+    if(u.avatar_url){avEl.innerHTML=`<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;avEl.style.overflow='hidden';}
+    else{avEl.style.background='linear-gradient(135deg,#25f4ee,#0ea5e9)';document.getElementById('other-avatar-initials').textContent=(u.username||'?').substring(0,2).toUpperCase();}
+    document.getElementById('other-name').textContent=u.username;
+    document.getElementById('other-handle').textContent='@'+u.username;
+    document.getElementById('other-profile-handle').textContent='@'+u.username;
+    document.getElementById('other-bio').textContent=u.bio||`${u.role==='player'?'Jugador':'Observador'} en REVEN ⚡`;
+    const {count:fc}=await sb.from('follows').select('*',{count:'exact',head:true}).eq('player_id',uid);
+    document.getElementById('other-followers').textContent=(fc||0).toLocaleString();
+    const {count:fgc}=await sb.from('follows').select('*',{count:'exact',head:true}).eq('observer_id',uid);
+    document.getElementById('other-following').textContent=(fgc||0).toLocaleString();
+    const btn=document.getElementById('other-follow-btn');
+    btn.textContent=isF?'Siguiendo':'Seguir';btn.className=`btn-follow-lg ${isF?'following':''}`;
+    btn.onclick=()=>toggleFollowOther(btn,uid,u.username);
+    // Videos grid
+    buildOtherProfileGrid(uid);
+    // Live badge
+    if(u.is_live){document.getElementById('other-bio').innerHTML=`<span style="color:var(--acc);font-weight:700;">🔴 EN VIVO AHORA</span><br>${u.bio||''}`;}
+    S.prevScreen=S.currentScreen;
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-other-profile').style.display='flex';
+    document.getElementById('screen-other-profile').classList.add('active');
+    S.currentScreen='other-profile';
+  }catch(e){showToast('Error: '+e.message);}
+}
+async function buildOtherProfileGrid(uid){
+  const grid=document.getElementById('other-grid');grid.innerHTML='';
+  const {data:videos}=await sb.from('player_videos').select('*').eq('player_id',uid).order('created_at',{ascending:false}).limit(9);
+  (videos||[]).forEach(v=>{
+    const d=document.createElement('div');d.className='vid-thumb';
+    d.innerHTML=`<video src="${v.video_url}" preload="metadata" muted style="width:100%;height:100%;object-fit:cover;"></video>`;
+    d.onclick=()=>playVideoModal(v.video_url);grid.appendChild(d);
+  });
+  if(!videos||!videos.length)grid.innerHTML='<div style="grid-column:1/-1;padding:32px;text-align:center;color:#444;">Sin videos</div>';
+}
+function toggleFollowOther(btn,uid,username){
+  toggleFollow(uid,btn);
+}
+function goBack(){
+  document.getElementById('screen-other-profile').style.display='none';
+  document.getElementById('screen-other-profile').classList.remove('active');
+  goScreen(S.prevScreen==='other-profile'?'home':S.prevScreen);
+}
+
+// ── LIVE VIEW ─────────────────────────────
+async function openLive(playerId,username,avatarUrl){
+  S.activePlayer={id:playerId,username,avatarUrl};
+  const avEl=document.getElementById('live-view-avatar');
+  if(avatarUrl){avEl.innerHTML=`<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;avEl.style.overflow='hidden';avEl.style.padding='0';}
+  else{avEl.textContent=(username||'?').substring(0,2).toUpperCase();avEl.style.background='linear-gradient(135deg,#fe2c55,#7928ca)';}
+  document.getElementById('live-view-name').textContent=username;
+  document.getElementById('live-view-count').textContent='Conectando...';
+  document.getElementById('live-chat-msgs').innerHTML='';
+  document.getElementById('live-view').classList.add('open');
+  // Replace emoji center with real video
+  const videoWrap=document.querySelector('.live-view-video');
+  let videoEl=document.getElementById('lv-video');
+  if(!videoEl){
+    videoEl=document.createElement('video');videoEl.id='lv-video';videoEl.autoplay=true;videoEl.playsInline=true;
+    videoEl.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
+    videoWrap.insertBefore(videoEl,videoWrap.firstChild);
+  }
+  // Gift sheet
+  buildGiftSheetDOM();
+  // Subscribe chat
+  subscribeViewerChat(`live-${username}`);
+  // Connect LiveKit
+  try{
+    const res=await fetch(`${BACKEND_URL}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:S.profile.username+(S.role==='player'?'_p':''),roomName:`live-${username}`,isPublisher:false})});
+    const {token,url}=await res.json();
+    const {Room,RoomEvent,Track}=await import('https://cdn.jsdelivr.net/npm/livekit-client@2/+esm');
+    S.observerRoom=new Room();
+    S.observerRoom.on(RoomEvent.TrackSubscribed,(track)=>{
+      if(track.kind===Track.Kind.Video||track.kind===Track.Kind.Audio)track.attach(videoEl);
+    });
+    S.observerRoom.on(RoomEvent.ParticipantConnected,()=>document.getElementById('live-view-count').textContent=`${S.observerRoom.remoteParticipants.size+1} viendo`);
+    S.observerRoom.on(RoomEvent.ParticipantDisconnected,()=>document.getElementById('live-view-count').textContent=`${S.observerRoom.remoteParticipants.size+1} viendo`);
+    await S.observerRoom.connect(url,token);
+    document.getElementById('live-view-count').textContent=`${S.observerRoom.remoteParticipants.size+1} viendo`;
+  }catch(e){document.getElementById('live-view-count').textContent='Sin señal';addLiveMsg('REVEN','Sin señal de video','#555');}
+}
+function closeLive(){
+  document.getElementById('live-view').classList.remove('open');
+  const v=document.getElementById('lv-video');if(v){v.srcObject=null;}
+  if(S.observerRoom){S.observerRoom.disconnect();S.observerRoom=null;}
+  if(S.chatChannel){S.chatChannel.unsubscribe();S.chatChannel=null;}
+  S.activePlayer=null;
+}
+function subscribeViewerChat(roomName){
+  if(S.chatChannel)S.chatChannel.unsubscribe();
+  S.chatChannel=sb.channel(`live-chat:${roomName}`,{config:{broadcast:{self:true}}});
+  S.chatChannel.on('broadcast',{event:'msg'},(p)=>{
+    const {user,text,type}=p.payload;
+    if(user===`@${S.profile.username}`)return;
+    addLiveMsg(user,typeof text==='string'?text:text.desc||JSON.stringify(text),type==='gift'?'#ffd700':type==='challenge'?'#39FF14':'#25f4ee');
+  }).subscribe();
+}
+function addLiveMsg(user,text,color){
+  const msgs=document.getElementById('live-chat-msgs');if(!msgs)return;
+  if(msgs.children.length>8)msgs.removeChild(msgs.firstChild);
+  const p=document.createElement('p');p.className='live-chat-msg';
+  p.innerHTML=`<span style="color:${color||'#25f4ee'}">${user}</span> ${text}`;
+  msgs.appendChild(p);
+}
+function sendLiveMsg(inp){
+  const txt=inp.value.trim();if(!txt)return;
+  addLiveMsg(`@${S.profile.username}`,txt,'#ffd700');
+  S.chatChannel&&S.chatChannel.send({type:'broadcast',event:'msg',payload:{user:`@${S.profile.username}`,text:txt,color:'#25f4ee',type:'normal'}});
+  inp.value='';
+}
+function sendGift(){
+  // Show mini gift picker
+  const el=document.getElementById('live-gifts-sheet');
+  if(el){el.style.display=el.style.display==='none'?'block':'none';return;}
+  buildGiftSheetDOM();
+  document.getElementById('live-gifts-sheet').style.display='block';
+}
+function buildGiftSheetDOM(){
+  let el=document.getElementById('live-gifts-sheet');
+  if(!el){
+    el=document.createElement('div');el.id='live-gifts-sheet';
+    el.style.cssText='position:fixed;bottom:70px;left:0;right:0;background:rgba(0,0,0,.95);border-radius:16px 16px 0 0;z-index:150;padding:12px;display:none;max-height:40vh;overflow-y:auto;';
+    el.innerHTML=`<div style="width:36px;height:4px;border-radius:2px;background:#444;margin:0 auto 12px;"></div>
+      <div style="font-size:12px;font-weight:700;color:#666;letter-spacing:.08em;margin-bottom:10px;">REGALOS</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        ${GIFTS.map(g=>`<div onclick="doSendGift('${g.id}')" style="border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;border:1px solid #222;background:#1a1a1a;">
+          <div style="font-size:24px;">${g.e}</div>
+          <div style="font-size:9px;color:#ccc;margin:2px 0;">${g.name}</div>
+          <div style="font-size:9px;color:#ffd700;font-weight:700;">⬡${g.coins.toLocaleString()}</div>
+        </div>`).join('')}
+      </div>`;
+    document.getElementById('live-view').appendChild(el);
+  }
+}
+function doSendGift(id){
+  const g=GIFTS.find(x=>x.id===id);if(!g)return;
+  document.getElementById('live-gifts-sheet').style.display='none';
+  if(S.role==='player'){showToast('Los jugadores no pueden enviar regalos');return;}
+  if(S.obsBalance<g.coins){showToast('Saldo insuficiente');return;}
+  S.obsBalance-=g.coins;
+  const user=`@${S.profile.username}`;const text=`${g.e} ${g.name} (⬡${g.coins.toLocaleString()})`;
+  addLiveMsg(user,text,'#ffd700');
+  S.chatChannel&&S.chatChannel.send({type:'broadcast',event:'msg',payload:{user,text,color:'#ffd700',type:'gift'}});
+  sb.from('profiles').update({balance_coins:S.obsBalance}).eq('id',S.user.id);
+  const float=document.getElementById('live-gifts-float');
+  const div=document.createElement('div');div.className='gift-float';
+  div.innerHTML=`${g.e} <span style="color:#ffd700">${g.name}</span>`;
+  float.appendChild(div);setTimeout(()=>div.remove(),3000);
+  showToast(`${g.e} ${g.name} enviado!`);
+}
+
+// ── STUDIO (Player Go Live) ───────────────
+function openStudio(){
+  let studio=document.getElementById('studio-overlay');
+  if(!studio){
+    studio=document.createElement('div');studio.id='studio-overlay';
+    studio.style.cssText='position:fixed;inset:0;background:#000;z-index:180;display:flex;flex-direction:column;';
+    studio.innerHTML=`
+      <div style="height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #222;flex-shrink:0;">
+        <button onclick="closeStudio()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;"><i class="ti ti-x"></i></button>
+        <div style="font-size:16px;font-weight:800;" id="studioStatus">Listo para transmitir</div>
+        <div style="width:36px;"></div>
+      </div>
+      <div style="flex:1;position:relative;background:#000;overflow:hidden;">
+        <video id="studioCamVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+        <div id="studioLiveBadge" style="display:none;position:absolute;top:12px;left:12px;background:var(--acc);padding:4px 12px;border-radius:5px;font-size:13px;font-weight:800;display:none;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#fff;"></span>LIVE</div>
+        <div id="studioChatOverlay" style="position:absolute;bottom:90px;left:0;right:0;padding:0 12px;display:flex;flex-direction:column;gap:4px;pointer-events:none;max-height:180px;overflow:hidden;"></div>
+        <div style="position:absolute;bottom:16px;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:0 20px;">
+          <button onclick="switchStudioCam()" style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;"><i class="ti ti-camera-rotate"></i></button>
+          <button id="studioLiveBtn" onclick="toggleStudioLive()" style="width:72px;height:72px;border-radius:50%;background:var(--acc);border:4px solid #fff;color:#fff;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 0 24px rgba(254,44,85,.5);">EN VIVO</button>
+          <button onclick="document.getElementById('studioVidUpload').click()" style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;"><i class="ti ti-upload"></i></button>
+          <input type="file" id="studioVidUpload" accept="video/*" style="display:none;" onchange="uploadVideo(event)">
+        </div>
+      </div>`;
+    document.body.appendChild(studio);
+  }
+  studio.style.display='flex';
+  startStudioCam();
+}
+function closeStudio(){
+  const s=document.getElementById('studio-overlay');if(s)s.style.display='none';
+  if(S.isLive)stopLive();
+  stopStudioCam();
+}
+function startStudioCam(){
+  navigator.mediaDevices?.getUserMedia({video:{facingMode:S.camFacing},audio:false})
+    .then(st=>{S.localStream=st;const v=document.getElementById('studioCamVideo');if(v){v.srcObject=st;v.style.transform=S.camFacing==='user'?'scaleX(-1)':'none';}})
+    .catch(()=>{});
+}
+function stopStudioCam(){if(S.localStream){S.localStream.getTracks().forEach(t=>t.stop());S.localStream=null;}}
+async function switchStudioCam(){
+  S.camFacing=S.camFacing==='user'?'environment':'user';
+  if(S.isLive&&S.livekitRoom){
+    const pub=[...S.livekitRoom.localParticipant.videoTrackPublications.values()][0];
+    if(pub?.track)await pub.track.restartTrack({facingMode:S.camFacing});
+  }else{stopStudioCam();await new Promise(r=>setTimeout(r,300));startStudioCam();}
+}
+async function toggleStudioLive(){
+  const btn=document.getElementById('studioLiveBtn');
+  const badge=document.getElementById('studioLiveBadge');
+  const status=document.getElementById('studioStatus');
+  if(!S.isLive){
+    btn.textContent='...';btn.disabled=true;
+    stopStudioCam();await new Promise(r=>setTimeout(r,400));
+    try{
+      const res=await fetch(`${BACKEND_URL}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:S.profile.username,roomName:`live-${S.profile.username}`,isPublisher:true})});
+      if(!res.ok)throw new Error(`${res.status}`);
+      const {token,url}=await res.json();
+      const {Room}=await import('https://cdn.jsdelivr.net/npm/livekit-client@2/+esm');
+      S.livekitRoom=new Room({videoCaptureDefaults:{facingMode:S.camFacing},audioCaptureDefaults:{echoCancellation:true,noiseSuppression:true}});
+      await S.livekitRoom.connect(url,token);
+      await S.livekitRoom.localParticipant.enableCameraAndMicrophone();
+      S.livekitRoom.localParticipant.videoTrackPublications.forEach(pub=>{if(pub.track)pub.track.attach(document.getElementById('studioCamVideo'));});
+      S.livekitRoom.on('participantConnected',()=>{status.textContent=`${S.livekitRoom.remoteParticipants.size} viendo`;});
+      S.livekitRoom.on('participantDisconnected',()=>{status.textContent=`${S.livekitRoom.remoteParticipants.size} viendo`;});
+      await sb.from('profiles').update({is_live:true}).eq('id',S.user.id);
+      S.isLive=true;
+      btn.textContent='PARAR';btn.style.background='#333';btn.disabled=false;
+      badge.style.display='flex';status.textContent='Estás en vivo';
+      subscribeStudioChat();
+      showToast('¡Estás en vivo!');
+    }catch(e){btn.textContent='EN VIVO';btn.style.background='var(--acc)';btn.disabled=false;showToast('Error: '+e.message);}
+  }else{
+    await stopLive();
+    btn.textContent='EN VIVO';btn.style.background='var(--acc)';
+    if(badge)badge.style.display='none';status.textContent='Listo para transmitir';
+    startStudioCam();
+  }
+}
+async function stopLive(){
+  if(S.livekitRoom){await S.livekitRoom.disconnect();S.livekitRoom=null;}
+  await sb.from('profiles').update({is_live:false}).eq('id',S.user.id);
+  S.isLive=false;
+  if(S.chatChannel){S.chatChannel.unsubscribe();S.chatChannel=null;}
+}
+function subscribeStudioChat(){
+  if(S.chatChannel)S.chatChannel.unsubscribe();
+  S.chatChannel=sb.channel(`live-chat:live-${S.profile.username}`,{config:{broadcast:{self:false}}});
+  S.chatChannel.on('broadcast',{event:'msg'},(p)=>{
+    const {user,text,type}=p.payload;
+    const overlay=document.getElementById('studioChatOverlay');if(!overlay)return;
+    const el=document.createElement('p');el.className='live-chat-msg';
+    if(type==='gift')el.innerHTML=`<span style="color:#ffd700">${user}</span> envió ${typeof text==='string'?text:'regalo'}`;
+    else if(type==='challenge')el.innerHTML=`<span style="color:#39FF14">⚡ RETO</span> ${typeof text==='object'?text.desc:text}`;
+    else el.innerHTML=`<span style="color:#25f4ee">${user}</span> ${typeof text==='string'?text:''}`;
+    overlay.appendChild(el);overlay.scrollTop=overlay.scrollHeight;
+    while(overlay.children.length>12)overlay.removeChild(overlay.firstChild);
+  }).subscribe();
+}
+
+// ── NAV & SEARCH ─────────────────────────
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  S.prevScreen=S.currentScreen;S.currentScreen=id;
+  const s=document.getElementById('screen-'+id);if(s)s.classList.add('active');
+  const n=document.getElementById('nav-'+id);if(n)n.classList.add('active');
+  // Lazy loads
+  if(id==='messages')buildMessages();
+  if(id==='friends')buildFriends();
+}
+function switchFeedTab(type,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');S.feedTab=type;
+  if(type==='live'){showToast('Cargando lives...');}
+  buildFeed();
+}
+function switchProfileTab(type,el){
+  const tabs=el.parentElement.querySelectorAll('.profile-tab');
+  tabs.forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  if(type==='videos')buildProfileGrid();
+  else showToast('Próximamente');
+}
+function openSearch(){
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('search-input').focus(),100);
+  renderSearch('');
+}
+function closeSearch(){document.getElementById('search-overlay').classList.remove('open');document.getElementById('search-input').value='';}
+let searchTimer=null;
+function doSearch(q){
+  clearTimeout(searchTimer);
+  if(!q.trim()){renderSearch('');return;}
+  searchTimer=setTimeout(async()=>{
+    const el=document.getElementById('search-content');
+    el.innerHTML='<div style="padding:12px;color:#555;font-size:13px;">Buscando...</div>';
+    try{
+      const {data}=await sb.from('profiles').select('id,username,avatar_url,role,followers_count').ilike('username',`%${q.trim()}%`).limit(15);
+      if(!data||!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:#555;">Sin resultados</div>';return;}
+      el.innerHTML=`<div class="search-section-title">Usuarios</div>`+
+        data.map(u=>{
+          const isMe=u.id===S.user.id;const isF=S.followingIds.has(u.id);
+          const avHTML=u.avatar_url?`<img src="${u.avatar_url}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;">`:`<span>${(u.username||'?').substring(0,2).toUpperCase()}</span>`;
+          return `<div class="friend-item" onclick="openOtherProfile('${u.id}');closeSearch()">
+            <div class="avatar-md" style="overflow:hidden;background:linear-gradient(135deg,#fe2c55,#7928ca)">${avHTML}</div>
+            <div class="friend-info"><div class="friend-name">@${u.username}</div><div class="friend-sub">${u.role==='player'?'Jugador':'Observador'}</div></div>
+            ${!isMe?`<button class="follow-btn ${isF?'following':''}" id="ffb-${u.id}" onclick="event.stopPropagation();toggleFollow('${u.id}',this)">${isF?'Siguiendo':'Seguir'}</button>`:''}
+          </div>`;
+        }).join('');
+    }catch(e){el.innerHTML=`<div style="padding:12px;color:#ff4444;">${e.message}</div>`;}
+  },350);
+}
+function renderSearch(q){
+  const el=document.getElementById('search-content');
+  el.innerHTML=`
+    <div class="search-section-title">Explorar</div>
+    <div class="explore-grid">
+      ${[{emoji:'⚡',label:'Retos',bg:'135deg,#7928ca,#fe2c55'},{emoji:'🔴',label:'Lives',bg:'135deg,#fe2c55,#ff6b35'},{emoji:'🏆',label:'Top',bg:'135deg,#ffd700,#ff9500'},{emoji:'🎮',label:'Gaming',bg:'135deg,#0ea5e9,#25f4ee'},{emoji:'🔥',label:'Viral',bg:'135deg,#fe2c55,#7928ca'},{emoji:'🌙',label:'Noche',bg:'135deg,#1a0028,#0a1a3e'}]
+      .map(e=>`<div class="explore-cell" onclick="showToast('Explorando ${e.label}...')"><div class="explore-cell-bg" style="background:linear-gradient(${e.bg})">${e.emoji}</div><div class="explore-label">${e.label}</div></div>`).join('')}
+    </div>
+    <div class="search-section-title">Tendencias</div>
+    <div class="trending-list">
+      ${['#REVEN','#Retos','#LiveNow','#ProGamerMX','#Clutch2025'].map((t,i)=>`<div class="trending-item" onclick="showToast('Buscando ${t}')"><div class="trend-rank ${i<3?'top':''}">${i+1}</div><div class="trend-info"><div class="trend-tag">${t}</div><div class="trend-count">Tendencia en REVEN</div></div><i class="ti ti-trending-up" style="font-size:18px;color:#444"></i></div>`).join('')}
+    </div>`;
+}
+function openCreate(){
+  document.getElementById('create-overlay').classList.add('open');
+  // Wire real actions
+  const opts=document.querySelectorAll('.create-option');
+  if(opts[0])opts[0].onclick=()=>{closeCreate();document.getElementById('videoInputCreate')?.click()||triggerVideoUpload();};
+  if(opts[1])opts[1].onclick=()=>{closeCreate();if(S.role==='player')openStudio();else showToast('Solo jugadores pueden transmitir en vivo');};
+  if(opts[2])opts[2].onclick=()=>{closeCreate();showToast('Próximamente: Retos ⚡');};
+  if(opts[3])opts[3].onclick=()=>{closeCreate();triggerVideoUpload();};
+}
+function triggerVideoUpload(){
+  let inp=document.getElementById('createVideoInput');
+  if(!inp){inp=document.createElement('input');inp.type='file';inp.id='createVideoInput';inp.accept='video/*';inp.style.display='none';inp.onchange=uploadVideo;document.body.appendChild(inp);}
+  inp.click();
+}
+function closeCreate(e){if(!e||e.target===document.getElementById('create-overlay'))document.getElementById('create-overlay').classList.remove('open');}
+
+// ── LOGOUT ───────────────────────────────
+async function logout(){await sb.auth.signOut();location.href='/index.html';}
+
+// ── TOAST ────────────────────────────────
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>
