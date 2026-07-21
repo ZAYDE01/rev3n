@@ -71,6 +71,14 @@ nav.main{display:flex; align-items:center; gap:36px; padding:16px 32px;}
 .theme-toggle::after{content:'';position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--text); transition:transform .2s;}
 [data-theme="dark"] .theme-toggle::after{transform:translateX(18px);}
 
+/* mobile menu button + panel */
+.mobile-menu-btn{display:none; background:none; border:none; color:var(--text); padding:6px; align-items:center; justify-content:center;}
+.mobile-menu-btn svg{width:22px; height:22px;}
+.mobile-nav{display:none; flex-direction:column; background:var(--bg); border-bottom:1px solid var(--line); padding:8px 16px 16px;}
+.mobile-nav.open{display:flex;}
+.mobile-nav a{padding:12px 4px; font-size:14px; font-weight:600; color:var(--text); border-bottom:1px solid var(--line);}
+.mobile-nav a:last-child{border-bottom:none;}
+
 /* ---------- HERO ---------- */
 .hero{padding:64px 32px 0; display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center; max-width:1360px; margin:0 auto;}
 .hero-eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
@@ -328,6 +336,7 @@ footer{border-top:1px solid var(--line); margin-top:60px; padding:56px 32px 30px
 /* responsive */
 @media(max-width:1180px){
   .navlinks{display:none;}
+  .mobile-menu-btn{display:flex;}
 }
 @media(max-width:1000px){
   .hero{grid-template-columns:1fr;} .navlinks{display:none;} .grid{grid-template-columns:repeat(2,1fr);}
@@ -353,6 +362,9 @@ footer{border-top:1px solid var(--line); margin-top:60px; padding:56px 32px 30px
 <header>
   <nav class="main">
     <a class="logo" href="#" onclick="navigate('home');return false;">ZA<span>Y</span>DE</a>
+    <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <div class="navlinks">
       <a href="#" data-cat="Ropa" onclick="return navCat(this)">Ropa</a>
       <a href="#" data-cat="Perfumes" onclick="return navCat(this)">Perfumes</a>
@@ -380,6 +392,15 @@ footer{border-top:1px solid var(--line); margin-top:60px; padding:56px 32px 30px
       </button>
     </div>
   </nav>
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#" data-cat="Ropa" onclick="return navCatMobile(this)">Ropa</a>
+    <a href="#" data-cat="Perfumes" onclick="return navCatMobile(this)">Perfumes</a>
+    <a href="#" data-cat="Bolsos" onclick="return navCatMobile(this)">Bolsos</a>
+    <a href="#" data-cat="Lentes" onclick="return navCatMobile(this)">Lentes</a>
+    <a href="#" data-cat="Relojes" onclick="return navCatMobile(this)">Relojes</a>
+    <a href="#" data-cat="Sneakers" onclick="return navCatMobile(this)">Sneakers</a>
+    <a href="#" data-cat="Joyería" onclick="return navCatMobile(this)">Joyería</a>
+  </div>
 </header>
 
 <!-- ================= HOME ================= -->
@@ -544,7 +565,7 @@ footer{border-top:1px solid var(--line); margin-top:60px; padding:56px 32px 30px
 <main id="page-pdp" class="page-hidden">
   <div class="pdp">
     <div class="crumbs">
-      <a href="#" onclick="navigate('home');return false;">Inicio</a> / <a href="#" id="pdpCrumbCat" href="#">Categoría</a> / <span id="pdpCrumbName"></span>
+      <a href="#" onclick="navigate('home');return false;">Inicio</a> / <a href="#" id="pdpCrumbCat" onclick="return navCrumbCat()">Categoría</a> / <span id="pdpCrumbName"></span>
     </div>
     <div class="pdp-grid">
       <div>
@@ -962,6 +983,14 @@ function navCat(el){
   navCatName(cat);
   return false;
 }
+function toggleMobileNav(){
+  document.getElementById('mobileNav').classList.toggle('open');
+}
+function navCatMobile(el){
+  navCat(el);
+  document.getElementById('mobileNav').classList.remove('open');
+  return false;
+}
 function navCatName(cat){
   clearFilters(true);
   if(cat) filters.cats.add(cat);
@@ -1001,7 +1030,7 @@ function buildFilterUI(){
     <button type="button" class="chip ${filters.sizes.has(s)?'active':''}" style="width:auto;padding:7px 10px;" onclick="toggleFilter('sizes','${s}',true)">${s}</button>`).join('');
   document.getElementById('filterLine').innerHTML = LINES.map(l=>`
     <label class="filter-opt"><input type="checkbox" ${filters.line.has(l)?'checked':''} onchange="toggleFilter('line','${l}')">${l}</label>`).join('');
-  const conds = ["Nuevo","Nuevo con caja","Como nuevo"];
+  const conds = [...new Set(PRODUCTS.map(p=>p.condition))];
   document.getElementById('filterCond').innerHTML = conds.map(c=>`
     <label class="filter-opt"><input type="checkbox" ${filters.cond.has(c)?'checked':''} onchange="toggleFilter('cond','${c}')">${c}</label>`).join('');
 }
@@ -1090,6 +1119,10 @@ function openPDP(id){
   document.getElementById('pdpRelated').innerHTML = related.map(cardHTML).join('');
 
   navigate('pdp');
+}
+function navCrumbCat(){
+  if(currentProduct && currentProduct.category) navCatName(currentProduct.category);
+  return false;
 }
 function setPDPImg(src, el){
   document.getElementById('pdpMainImg').src = src;
@@ -1206,8 +1239,6 @@ function confirmOrder(){
     showToast('Por ahora solo enviamos dentro de México');
     return;
   }
-  // Aquí se conectaría el botón real de PayPal Checkout (PayPal JS SDK) usando
-  // las credenciales de tu cuenta de negocio — nunca un número de tarjeta.
   showToast('Pedido confirmado — te llegará el rastreo de Estafeta por correo');
   cart = []; renderCart(); closeCheckout();
 }
@@ -1234,9 +1265,6 @@ function setUser(name, provider){
   showToast(`Sesión iniciada con ${provider}`);
 }
 function socialLogin(provider){
-  // DEMO: aquí se conecta el SDK/OAuth real de cada proveedor (Google Identity Services,
-  // Facebook Login, Sign in with Apple, Sign in with X) — nunca se piden contraseñas de
-  // esos servicios directamente en el sitio, todo pasa por su propia pantalla de login.
   const demoNames = { Google:'Ana Google', Facebook:'Ana Facebook', Apple:'Ana Apple', X:'Ana X' };
   setUser(demoNames[provider] || 'Cliente ZAYDE', provider);
 }
