@@ -1106,12 +1106,27 @@ footer{border-top:1px solid var(--line); margin-top:60px; padding:56px 32px 30px
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script>
-const FIREBASE_CONFIG = {
-  apiKey: "TU_API_KEY",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  appId: "TU_APP_ID"
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAzSSYstPqksVnCdWIjmUe1qRqozyVjjgU",
+  authDomain: "zayde-4ce71.firebaseapp.com",
+  projectId: "zayde-4ce71",
+  storageBucket: "zayde-4ce71.firebasestorage.app",
+  messagingSenderId: "575273733541",
+  appId: "1:575273733541:web:2d06b61b077a044178ec4c",
+  measurementId: "G-Q0E455JPSJ"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 let firebaseReady = false;
 try{
   if(FIREBASE_CONFIG.apiKey !== "TU_API_KEY"){
